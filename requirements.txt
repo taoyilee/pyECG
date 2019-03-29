@@ -2,3 +2,4 @@ ishneholterlib==2017.4.11
 numpy==1.16.2
 wfdb==2.2.1
 pytest==4.3.1
+pytest-cov==2.6.1
