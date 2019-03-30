@@ -6,8 +6,8 @@ pyECG
 pyECG is an opensource Python package which supports read/write of common ECG dataset formats.
 Current supported formats are:
 
-1. Physiobank WFDB (.hea/.dat)
-2. iShine-formatted Holter ECG files (.ecg/.ann)
+1. Physiobank `WFDB  <https://physionet.org/physiotools/wfdb.shtml>`_ (.hea/.dat)
+2. `iShine  <http://thew-project.org/papers/Badilini.ISHNE.Holter.Standard.pdf>`_-formatted Holter ECG files (.ecg/.ann)
 
 
 Getting Started
@@ -22,7 +22,7 @@ Prerequisites
 To setup pyECG, you need:
 
 1. Python 3.6
-2. ishneholterlib==2017.4.11
+2. `ishneholterlib  <https://bitbucket.org/atpage/ishneholterlib>`_ ==2017.4.11
 3. numpy==1.16.2
 4. wfdb==2.2.1
 
@@ -32,6 +32,24 @@ Installing
 
  pip install pyECG
 
+
+Basic Usage
+----------------------------
+.. code-block:: python
+
+    from pyecg import ECGRecord
+
+    # To load a wfdb formatted ECG record
+    hea_path = "/path/to/your/hea/file"
+    record = ECGRecord.from_wfdb(hea_path)
+
+    # To load a ishine formatted ECG record
+    hea_path = "/path/to/your/ecg/file"
+    record = ECGRecord.from_ishine(hea_path)
+
+    time = record.time
+    signal = record.get_lead(lead_name)
+    print(signal.lead_name)
 
 License
 ----------------------------

@@ -24,7 +24,7 @@ def test_signal(hea_path):
 @pytest.mark.parametrize("hea_path", ["tests/wfdb/100", "tests/wfdb/100.hea"])
 def test_record_name(hea_path):
     record = ECGRecord.from_wfdb(hea_path)
-    assert record.name == "100"
+    assert record.record_name == "100"
 
 
 @pytest.mark.parametrize("hea_path", ["tests/wfdb/100", "tests/wfdb/100.hea"])
@@ -44,3 +44,21 @@ def test_signal_name(hea_path):
 def test_signal_content(hea_path, lead_name, signal):
     record = ECGRecord.from_wfdb(hea_path)
     assert record.get_lead(lead_name)[:10] == signal
+
+
+@pytest.mark.parametrize("hea_path", ["tests/wfdb/100"])
+def test_annotation(hea_path):
+    record = ECGRecord.from_wfdb(hea_path)
+    assert len(record.annotations) == 2274
+
+
+@pytest.mark.parametrize("hea_path", ["tests/wfdb/100"])
+def test_select_annotation(hea_path):
+    record = ECGRecord.from_wfdb(hea_path)
+    assert len(record.annotations.select_label("N")) == 2239
+
+
+@pytest.mark.parametrize("hea_path", ["tests/wfdb/100"])
+def test_unique_labels(hea_path):
+    record = ECGRecord.from_wfdb(hea_path)
+    assert record.annotations.unique_labels == ['+', 'A', 'N', 'V']

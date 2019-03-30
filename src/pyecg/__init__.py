@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 from pkg_resources import get_distribution, DistributionNotFound
 
-from .ecg import ECGRecord, ECGSignal, ECGTime, ECGAnnotation
+from .annotations import ECGAnnotation
+from .ecg import ECGRecord, Signal, Time, SubjectInfo
 
 try:
     # Change here if project is renamed and does not equal the package name
