@@ -22,7 +22,7 @@ Prerequisites
 To setup pyECG, you need:
 
 1. Python 3.6
-2. ishneholterlib==2017.4.11
+2. `ishneholterlib  <https://bitbucket.org/atpage/ishneholterlib>`_ ==2017.4.11
 3. numpy==1.16.2
 4. wfdb==2.2.1
 

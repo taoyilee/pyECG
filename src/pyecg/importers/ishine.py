@@ -1,6 +1,6 @@
 import os
 
-import wfdb
+from ishneholterlib import Holter
 
 from pyecg import ECGRecord, ECGTime, ECGSignal
 from . import Importer
@@ -8,19 +8,17 @@ from . import Importer
 
 class ISHINELoader(Importer):
 
-    def load(self, hea_file) -> ECGRecord:
-        def load_annotation(ann_ext):
-            return wfdb.rdann(hea_file, ann_ext)
+    def load(self, ecg_file) -> ECGRecord:
+        if not os.path.isfile(ecg_file):
+            raise FileNotFoundError(f"{ecg_file} is not found")
+        record = Holter(ecg_file)
+        record.load_data()
+        time = ECGTime.from_fs_samples(record.sr, len(record.lead[0].data))
+        record_name = os.path.split(ecg_file)[1]
+        record_name = ".".join(record_name.split(".")[:-1])
+        new_record = ECGRecord(name=record_name, time=time)
 
-        base_path = os.path.splitext(hea_file)[0]
-        hea_file = base_path + ".hea"
-        if not os.path.isfile(hea_file):
-            raise FileNotFoundError(f"{hea_file} is not found")
+        for leadi in record.lead:
+            new_record._add_signal(ECGSignal(leadi.data, str(leadi)))
 
-        record = wfdb.rdrecord(base_path)
-        time = ECGTime.from_fs_samples(record.fs, record.sig_len)
-        new_record = ECGRecord(name=record.record_name, time=time)
-
-        for signal, lead_name in zip(record.p_signal.T, record.sig_name):
-            new_record._add_signal(ECGSignal(signal, lead_name))
         return new_record
