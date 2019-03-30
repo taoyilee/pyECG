@@ -16,3 +16,8 @@ Version 0.0.3
 ===========
 - Read / Write ishine datasets (\*.ecg/\*.ann)
 
+
+Version 0.0.4
+===========
+- Add support of annotation files for WFDB/iShine
+

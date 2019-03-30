@@ -24,7 +24,7 @@ def test_signal(ecg_path):
 @pytest.mark.parametrize("ecg_path", ["tests/ishine/ECG_P28.01.ecg"])
 def test_record_name(ecg_path):
     record = ECGRecord.from_ishine(ecg_path)
-    assert record.name == "ECG_P28.01"
+    assert record.record_name == "ECG_P28.01"
 
 
 @pytest.mark.parametrize("ecg_path", ["tests/ishine/ECG_P28.01.ecg"])
@@ -44,3 +44,27 @@ def test_signal_name(ecg_path):
 def test_signal_content(ecg_path, lead_name, signal):
     record = ECGRecord.from_ishine(ecg_path)
     assert record.get_lead(lead_name)[:10] == signal
+
+
+@pytest.mark.parametrize("ecg_path", ["tests/ishine/ECG_P28.01.ecg"])
+def test_annotation(ecg_path):
+    record = ECGRecord.from_ishine(ecg_path)
+    assert len(record.annotations) == 97
+
+
+@pytest.mark.parametrize("ecg_path", ["tests/ishine/ECG_P28.01.ecg"])
+def test_select_annotation(ecg_path):
+    record = ECGRecord.from_ishine(ecg_path)
+    assert len(record.annotations.select_label("N")) == 87
+
+
+@pytest.mark.parametrize("ecg_path", ["tests/ishine/ECG_P28.01.ecg"])
+def test_unique_labels(ecg_path):
+    record = ECGRecord.from_ishine(ecg_path)
+    assert record.annotations.unique_labels == ["N", "X"]
+
+
+@pytest.mark.parametrize("ecg_path", ["tests/ishine/ECG_P28.01.ecg"])
+def test_subject_info(ecg_path):
+    record = ECGRecord.from_ishine(ecg_path)
+    assert record.info.race == 0
