@@ -5,6 +5,7 @@ import os
 import pickle
 import random
 from functools import lru_cache
+from multiprocessing import Pool
 from typing import List
 
 import numpy as np
@@ -124,6 +125,7 @@ class RelocatableDataset:
 
 
 class RecordTicket(RelocatableDataset):
+    _sig_len = None
 
     def __init__(self, record_file, selected_leads=None):
         """
@@ -137,13 +139,16 @@ class RecordTicket(RelocatableDataset):
 
     @property
     def sig_len(self):
+        if self._sig_len is not None:
+            return self._sig_len
         if self.is_ishine:
             record = Holter(self.record_file, check_valid=False)
-            return record.ecg_size
+            self._sig_len = record.ecg_size
         if self.is_wfdb:
             with open(self.record_file, "r") as fptr:
                 line = fptr.readline()
-            return int(line.split(" ")[3])
+            self._sig_len = int(line.split(" ")[3])
+        return self._sig_len
 
     @property
     def extension(self):
@@ -218,13 +223,24 @@ class RecordTicket(RelocatableDataset):
         return isinstance(self, type(other)) and self.__key() == other.__key()
 
 
+class RecordSignalLengthCallable:
+    def __call__(self, x):
+        return x.sig_len
+
+
+class RecordThawingCallable:
+    def __call__(self, x):
+        return x()
+
+
 class ECGDataset(RelocatableDataset):
     record_tickets: List[RecordTicket] = []
     dataset_name = None
 
     @property
     def sig_len(self):
-        return [tkt.sig_len for tkt in self.record_tickets]
+        with Pool(4) as p:
+            return p.map(RecordSignalLengthCallable(), self.record_tickets)
 
     def __init__(self, dataset_name=None, dataset_dir=None, record_tickets: List[RecordTicket] = []):
         if not os.path.isdir(dataset_dir):
@@ -247,7 +263,8 @@ class ECGDataset(RelocatableDataset):
 
     def __getitem__(self, item):
         if isinstance(item, slice):
-            return [rt() for rt in self.record_tickets[item]]
+            with Pool(4) as p:
+                return p.map(RecordThawingCallable(), self.record_tickets[item])
         else:
             return self.record_tickets[item]()
 

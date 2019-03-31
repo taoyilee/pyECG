@@ -33,3 +33,7 @@ Version 0.0.7
 ===============
 - Disable import validation for iShine DB. Use metadata to retrieve record length
 
+Version 0.0.8
+===============
+- Add multithread support to speed up loading
+
