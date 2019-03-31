@@ -16,6 +16,14 @@ def test_length(hea_path):
     assert len(record()) == 650000
 
 
+@pytest.mark.parametrize("ecg_file_path,record_name",
+                         [("tests/wfdb/100.hea", "100"),
+                          ("tests/ishine/ECG_P28.01.ecg", "ECG_P28.01")])
+def test_record_name(ecg_file_path, record_name):
+    record = RecordTicket(ecg_file_path)
+    assert record.record_name == record_name
+
+
 @pytest.mark.parametrize("hea_path", ["tests/wfdb/100", "tests/wfdb/100.hea"])
 def test_signal(hea_path):
     record = RecordTicket(hea_path)

@@ -203,6 +203,10 @@ class RecordTicket(RelocatableDataset):
         return False
 
     @property
+    def record_name(self):
+        return os.path.splitext(self.record_base)[0]
+
+    @property
     def record_base(self):
         return os.path.split(self.record_file)[1]
 
@@ -354,15 +358,22 @@ class ECGDataset(RelocatableDataset):
             csvwriter.writerow(["Dataset_Directory", "Base_Name"])
             for r in self.record_tickets:
                 csvwriter.writerow([r.dataset_dir, r.record_base])
+        return output_file_name
 
     def to_pickle(self, output_file_name):
-        output_csv_name = os.path.splitext(output_file_name)[0] + ".csv"
-        self.save_csv(output_csv_name)
-        if os.path.splitext(output_file_name)[1] != ".pickle":
-            raise ValueError(f"Extension of {output_file_name} must be .pickle")
+        extension = os.path.splitext(output_file_name)[1].lower()
+        if extension != "" and extension != ".pickle":
+            raise ValueError("Extension must be .pickle")
+        if extension == "":  # output_file_name is a directory
+            output_csv_name = output_file_name
+            output_file_name = os.path.join(output_file_name, self.dataset_name + ".pickle")
+        else:
+            output_csv_name = os.path.splitext(output_file_name)[0] + ".csv"
 
+        self.save_csv(output_csv_name)
         with open(output_file_name, 'wb') as f:
             pickle.dump(self, f, pickle.HIGHEST_PROTOCOL)
+        return output_file_name
 
     @classmethod
     def from_pickle(cls, pickle_file):

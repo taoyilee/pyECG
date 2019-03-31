@@ -41,3 +41,9 @@ Version 0.0.8.1
 ===============
 - Add duration and fs properties to RecordTicket and allows Dataset to query durations directly
 
+
+Version 0.0.8.2
+===============
+- Add record_name property to RecordTicket
+- Return output file name in to_csv() and to_pickle() methods
+

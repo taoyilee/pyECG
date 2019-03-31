@@ -151,6 +151,13 @@ def test_save_pickle():
     shutil.rmtree("tests/output/transient")
 
 
+def test_save_pickle_no_extension():
+    dataset = ECGDataset.from_dir(dataset_dir="tests/dataset_1")
+    dataset.to_pickle("tests/output/transient")
+    assert os.path.isfile("tests/output/transient/dataset_1.pickle")
+    shutil.rmtree("tests/output/transient")
+
+
 def test_load_pickle():
     dataset = ECGDataset.from_dir(dataset_dir="tests/dataset_1")
     dataset.to_pickle("tests/output/transient/dataset_1.pickle")
