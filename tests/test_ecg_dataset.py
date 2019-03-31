@@ -193,3 +193,9 @@ def test_record_length():
     dataset = ECGDataset.from_dir(dataset_dir="tests/dataset_1")
     record_length = dataset.sig_len
     assert record_length == [650000, 650000, 95573]
+
+
+def test_record_duration():
+    dataset = ECGDataset.from_dir(dataset_dir="tests/dataset_1")
+    record_duration = dataset.duration
+    assert record_duration == [1805.5527777777777, 1805.5527777777777, 95.572]

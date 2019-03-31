@@ -37,3 +37,7 @@ Version 0.0.8
 ===============
 - Add multithread support to speed up loading
 
+Version 0.0.8.1
+===============
+- Add duration and fs properties to RecordTicket and allows Dataset to query durations directly
+

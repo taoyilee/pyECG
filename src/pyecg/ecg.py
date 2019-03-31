@@ -126,6 +126,7 @@ class RelocatableDataset:
 
 class RecordTicket(RelocatableDataset):
     _sig_len = None
+    _fs = None
 
     def __init__(self, record_file, selected_leads=None):
         """
@@ -136,6 +137,23 @@ class RecordTicket(RelocatableDataset):
         self._record_file = record_file
         self._dataset_dir = os.path.dirname(record_file)
         self.selected_leads = selected_leads
+
+    @property
+    def fs(self):
+        if self._fs is not None:
+            return self._fs
+        if self.is_ishine:
+            record = Holter(self.record_file, check_valid=False)
+            self._fs = record.sr
+        if self.is_wfdb:
+            with open(self.record_file, "r") as fptr:
+                line = fptr.readline()
+            self._fs = int(line.split(" ")[2])
+        return self._fs
+
+    @property
+    def duration(self):
+        return (self.sig_len - 1) / self.fs
 
     @property
     def sig_len(self):
@@ -223,9 +241,12 @@ class RecordTicket(RelocatableDataset):
         return isinstance(self, type(other)) and self.__key() == other.__key()
 
 
-class RecordSignalLengthCallable:
+class RecordGetAttrCallable:
+    def __init__(self, attr):
+        self.attr = attr
+
     def __call__(self, x):
-        return x.sig_len
+        return getattr(x, self.attr)
 
 
 class RecordThawingCallable:
@@ -238,9 +259,14 @@ class ECGDataset(RelocatableDataset):
     dataset_name = None
 
     @property
+    def duration(self):
+        with Pool(4) as p:
+            return p.map(RecordGetAttrCallable("duration"), self.record_tickets)
+
+    @property
     def sig_len(self):
         with Pool(4) as p:
-            return p.map(RecordSignalLengthCallable(), self.record_tickets)
+            return p.map(RecordGetAttrCallable("sig_len"), self.record_tickets)
 
     def __init__(self, dataset_name=None, dataset_dir=None, record_tickets: List[RecordTicket] = []):
         if not os.path.isdir(dataset_dir):
