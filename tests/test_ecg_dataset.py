@@ -1,6 +1,7 @@
 import difflib
 import os
 import shutil
+import time
 
 import pytest
 
@@ -172,3 +173,23 @@ def test_select_lead():
     dataset = ECGDataset.from_dir(dataset_dir="tests/dataset_1", selected_leads=["MLII", "II"])
     for record in dataset.records:
         assert record.n_sig == 1
+
+
+def test_record_content():
+    dataset = ECGDataset.from_dir(dataset_dir="tests/dataset_1")
+    for i in range(10):
+        start = time.time()
+        record_100 = dataset[0]
+        record_101 = dataset[1]
+        record_ecg_p28 = dataset[2]
+        assert record_100.record_name == "100"
+        assert record_101.record_name == "101"
+        assert record_ecg_p28.record_name == "ECG_P28.01"
+        end = time.time()
+        print(end - start)
+
+
+def test_record_length():
+    dataset = ECGDataset.from_dir(dataset_dir="tests/dataset_1")
+    record_length = dataset.sig_len
+    assert record_length == [650000, 650000, 95573]

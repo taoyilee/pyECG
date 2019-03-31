@@ -29,3 +29,7 @@ Version 0.0.6
 ===============
 - Add support for lead selection on dataset loading
 
+Version 0.0.7
+===============
+- Disable import validation for iShine DB. Use metadata to retrieve record length
+

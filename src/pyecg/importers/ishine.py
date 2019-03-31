@@ -13,7 +13,7 @@ class ISHINELoader(Importer):
     def load(self, ecg_file) -> ECGRecord:
         if not os.path.isfile(ecg_file):
             raise FileNotFoundError(f"{ecg_file} is not found")
-        record = Holter(ecg_file)
+        record = Holter(ecg_file, check_valid=False)
         record.load_data()
 
         def load_ann(ann_file, annheader):

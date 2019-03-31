@@ -4,9 +4,11 @@ import glob
 import os
 import pickle
 import random
+from functools import lru_cache
 from typing import List
 
 import numpy as np
+from ishneholterlib import Holter
 
 from .annotations import ECGAnnotation
 from .sequence_data import Time, Signal
@@ -134,21 +136,37 @@ class RecordTicket(RelocatableDataset):
         self.selected_leads = selected_leads
 
     @property
-    def record_base(self):
-        return os.path.split(self.record_file)[1]
+    def sig_len(self):
+        if self.is_ishine:
+            record = Holter(self.record_file, check_valid=False)
+            return record.ecg_size
+        if self.is_wfdb:
+            with open(self.record_file, "r") as fptr:
+                line = fptr.readline()
+            return int(line.split(" ")[3])
 
     @property
-    def record_file(self):
-        return os.path.join(self.dataset_dir, os.path.split(self._record_file)[1])
+    def extension(self):
+        return os.path.splitext(self.record_file)[1].lower()
 
-    def __call__(self, *args, **kwargs):
-        """
-        Call means load from disk
-        :param args:
-        :param kwargs:
-        :return:
-        """
-        extension = os.path.splitext(self.record_file)[1].lower()
+    @property
+    def is_wfdb(self):
+        if self.extension == ".hea":
+            return True
+        if self.extension == "":
+            file_candidates = glob.glob(self.record_file + "*.hea")
+            file_candidates += glob.glob(self.record_file + "*.ecg")
+            if len(file_candidates) == 0:
+                raise FileNotFoundError(f"No hea/ecg file found with basename {self.record_file}")
+            if len(file_candidates) > 1:
+                raise ValueError(f"Too many files ({len(file_candidates)}) starts with {self.record_file}")
+            if os.path.splitext(file_candidates[0])[1].lower() == ".hea":
+                return True
+        return False
+
+    @property
+    def is_ishine(self):
+        extension = self.extension
         if extension == "":
             file_candidates = glob.glob(self.record_file + "*.hea")
             file_candidates += glob.glob(self.record_file + "*.ecg")
@@ -157,26 +175,56 @@ class RecordTicket(RelocatableDataset):
             if len(file_candidates) > 1:
                 raise ValueError(f"Too many files ({len(file_candidates)}) starts with {self.record_file}")
             extension = os.path.splitext(file_candidates[0])[1].lower()
+        if extension == ".ecg":
+            return True
+        return False
 
-        if extension == ".hea":
+    @property
+    def record_base(self):
+        return os.path.split(self.record_file)[1]
+
+    @property
+    def record_file(self):
+        return os.path.join(self.dataset_dir, os.path.split(self._record_file)[1])
+
+    @lru_cache(maxsize=64)
+    def __call__(self, *args, **kwargs):
+        """
+        Call means load from disk
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        if self.is_wfdb:
             return ECGRecord.from_wfdb(self.record_file, self.selected_leads)
-        elif extension == ".ecg":
+        elif self.is_ishine:
             return ECGRecord.from_ishine(self.record_file, self.selected_leads)
         else:
-            raise ValueError(f"Unknown extension {extension}")
+            raise ValueError(f"Unknown extension")
 
     def __repr__(self):
         return os.path.split(self._record_file)[1]
 
+    def __key(self):
+        if self.selected_leads is None:
+            return self.record_base, self.selected_leads
+        else:
+            return tuple([self.record_file] + self.selected_leads)
+
+    def __hash__(self):
+        return hash(self.__key())
+
     def __eq__(self, other):
-        if self.record_file == other.record_file and self.selected_leads == other.selected_leads:
-            return True
-        return False
+        return isinstance(self, type(other)) and self.__key() == other.__key()
 
 
 class ECGDataset(RelocatableDataset):
     record_tickets: List[RecordTicket] = []
     dataset_name = None
+
+    @property
+    def sig_len(self):
+        return [tkt.sig_len for tkt in self.record_tickets]
 
     def __init__(self, dataset_name=None, dataset_dir=None, record_tickets: List[RecordTicket] = []):
         if not os.path.isdir(dataset_dir):
