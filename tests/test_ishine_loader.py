@@ -68,3 +68,12 @@ def test_unique_labels(ecg_path):
 def test_subject_info(ecg_path):
     record = ECGRecord.from_ishine(ecg_path)
     assert record.info.race == 0
+
+
+@pytest.mark.parametrize("ecg_path, lead_names, n_lead",
+                         [("tests/ishine/ECG_P28.01.ecg", ["II"], 1),
+                          ("tests/ishine/ECG_P28.01.ecg", ["V5"], 1),
+                          ("tests/ishine/ECG_P28.01.ecg", ["I", "II", "V5"], 3)])
+def test_record_select_lead(ecg_path, lead_names, n_lead):
+    record = ECGRecord.from_ishine(ecg_path, selected_leads=lead_names)
+    assert record.n_sig == n_lead

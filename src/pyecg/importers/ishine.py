@@ -48,12 +48,15 @@ class ISHINELoader(Importer):
         record_name = ".".join(record_name.split(".")[:-1])
         new_record = ECGRecord(name=record_name, time=time)
 
-        for leadi in record.lead:
-            new_record.add_signal(Signal(leadi.data, str(leadi)))
+        for lead in record.lead:
+            lead_name = str(lead)
+            if self.selected_leads is None or lead_name in self.selected_leads:
+                new_record.add_signal(Signal(lead.data, lead_name))
 
         ecg_annotation = ECGAnnotation([ECGAnnotationSample(i["samp_num"], i["ann"]) for i in record.beat_anns])
         new_record.annotations = ecg_annotation
 
+        # copy over subject basic info
         new_record.info = SubjectInfo()
         new_record.info.race = record.race
         new_record.info.sex = record.sex

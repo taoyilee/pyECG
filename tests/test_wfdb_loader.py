@@ -62,3 +62,12 @@ def test_select_annotation(hea_path):
 def test_unique_labels(hea_path):
     record = ECGRecord.from_wfdb(hea_path)
     assert record.annotations.unique_labels == ['+', 'A', 'N', 'V']
+
+
+@pytest.mark.parametrize("hea_path, lead_names, n_lead",
+                         [("tests/wfdb/100.hea", ["MLII"], 1),
+                          ("tests/wfdb/100.hea", ["V5"], 1),
+                          ("tests/wfdb/100.hea", ["MLII", "V5"], 2)])
+def test_record_select_lead(hea_path, lead_names, n_lead):
+    record = ECGRecord.from_wfdb(hea_path, selected_leads=lead_names)
+    assert record.n_sig == n_lead

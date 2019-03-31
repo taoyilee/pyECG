@@ -24,9 +24,11 @@ class WFDBLoader(Importer):
         new_record = ECGRecord(name=record.record_name, time=time)
 
         for signal, lead_name in zip(record.p_signal.T, record.sig_name):
-            new_record.add_signal(Signal(signal, lead_name))
+            if self.selected_leads is None or lead_name in self.selected_leads:
+                new_record.add_signal(Signal(signal, lead_name))
         ann = load_annotation("atr")
 
-        ecg_annotation = ECGAnnotation([ECGAnnotationSample(samp, symbol) for samp, symbol in zip(ann.sample, ann.symbol)])
+        ecg_annotation = ECGAnnotation(
+            [ECGAnnotationSample(samp, symbol) for samp, symbol in zip(ann.sample, ann.symbol)])
         new_record.annotations = ecg_annotation
         return new_record

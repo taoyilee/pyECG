@@ -166,3 +166,9 @@ def test_slicing():
 def test_slicing_single_element():
     dataset = ECGDataset.from_dir(dataset_dir="tests/dataset_1")
     assert dataset[1] == ECGRecord.from_wfdb("tests/dataset_1/101.hea")
+
+
+def test_select_lead():
+    dataset = ECGDataset.from_dir(dataset_dir="tests/dataset_1", selected_leads=["MLII", "II"])
+    for record in dataset.records:
+        assert record.n_sig == 1
