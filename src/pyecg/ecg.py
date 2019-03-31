@@ -1,91 +1,16 @@
 import copy
+import csv
+import glob
+import os
+import pickle
+import random
 from typing import List
 
 import numpy as np
 
-from pyecg.annotations import ECGAnnotation
-
-
-def is_monotonic_increasing(x):
-    return np.all(np.diff(x) > 0)
-
-
-class SubjectInfo:
-    sex = None  # 1=male, 2=female
-    race = None  # 1=white, 2=black, 3=oriental
-    birth_data = None
-    record_data = None
-    file_date = None
-    start_time = None
-    pm = None
-
-
-class Sequence:
-    seq_data = None
-
-    def __eq__(self, other):
-        return self.seq_data == other
-
-    def __getitem__(self, item):
-        return self.seq_data[item]
-
-    def slice(self, slice_):
-        new_instance = copy.copy(self)
-        new_instance.seq_data = new_instance[slice_]
-        return new_instance
-
-    def __len__(self):
-        return len(self.seq_data)
-
-    def __iter__(self):
-        return iter(self.seq_data)
-
-
-class Time(Sequence):
-    fs = None
-    samples = None
-
-    @property
-    def time(self):
-        return self.seq_data
-
-    def __init__(self, fs=None, samples=None, time_stamps=None):
-        if fs is not None and samples is not None:
-            self.fs = fs
-            self.samples = samples
-            self.seq_data = (1 / self.fs) * np.arange(0, self.samples)
-            return
-
-        if time_stamps is not None and not isinstance(time_stamps, list) and not isinstance(time_stamps, np.ndarray):
-            raise TypeError(f"time_stamps should be a np.ndarray or a list: {type(time_stamps)}")
-        if time_stamps is not None:
-            self.seq_data = time_stamps
-
-    @classmethod
-    def from_fs_samples(cls, fs, samples):
-        return cls(fs=fs, samples=samples)
-
-    @classmethod
-    def from_timestamps(cls, time_stamps):
-        if not is_monotonic_increasing(time_stamps):
-            raise ValueError("Timestamps are not monotonically increasing")
-        return cls(time_stamps=time_stamps)
-
-
-class Signal(Sequence):
-    lead_name = None
-
-    def __repr__(self):
-        return f"Lead {self.lead_name}"
-
-    def __init__(self, signal, lead_name):
-        if isinstance(signal, str):
-            raise TypeError(f"Bad type of signal: {type(signal)}")
-        if isinstance(signal, np.ndarray):
-            self.seq_data = signal.tolist()
-        else:
-            self.seq_data = signal
-        self.lead_name = lead_name
+from .annotations import ECGAnnotation
+from .sequence_data import Time, Signal
+from .subject_info import SubjectInfo
 
 
 class ECGRecord:
@@ -94,6 +19,19 @@ class ECGRecord:
     _signals: List[Signal] = []
     annotations: ECGAnnotation = None
     info: SubjectInfo = None
+
+    def __eq__(self, other):
+        if self.n_sig != other.n_sig:
+            return False
+        if self.record_name != other.record_name:
+            return False
+        if self._signals != other._signals:
+            return False
+        if self.annotations != other.annotations:
+            return False
+        if self.info != other.info:
+            return False
+        return True
 
     def __init__(self, name, time):
         self.record_name = name
@@ -144,15 +82,15 @@ class ECGRecord:
         return new_instance
 
     @classmethod
-    def from_wfdb(cls, hea_file):
+    def from_wfdb(cls, hea_file, selected_leads=None):
         from pyecg.importers import WFDBLoader
-        loader = WFDBLoader()
+        loader = WFDBLoader(selected_leads=selected_leads)
         return loader.load(hea_file)
 
     @classmethod
-    def from_ishine(cls, ecg_file):
+    def from_ishine(cls, ecg_file, selected_leads=None):
         from pyecg.importers import ISHINELoader
-        loader = ISHINELoader()
+        loader = ISHINELoader(selected_leads=selected_leads)
         return loader.load(ecg_file)
 
     @classmethod
@@ -166,3 +104,196 @@ class ECGRecord:
         for signal, name in zip(signal_array, signal_names):
             new_instance.add_signal(Signal(signal=signal, lead_name=name))
         return new_instance
+
+
+class RelocatableDataset:
+    _dataset_dir = None
+
+    @property
+    def dataset_dir(self):
+        return self._dataset_dir
+
+    @dataset_dir.setter
+    def dataset_dir(self, value):
+        if os.path.isdir(value):
+            self._dataset_dir = value
+        else:
+            raise FileNotFoundError(f"{value} is not a valid directory")
+
+
+class RecordTicket(RelocatableDataset):
+
+    def __init__(self, record_file, selected_leads=None):
+        """
+
+        :param record_file: .hea / .ecg
+        :param selected_leads: if this kwarg is specified, lead names outside this list will not be loaded
+        """
+        self._record_file = record_file
+        self._dataset_dir = os.path.dirname(record_file)
+        self.selected_leads = selected_leads
+
+    @property
+    def record_base(self):
+        return os.path.split(self.record_file)[1]
+
+    @property
+    def record_file(self):
+        return os.path.join(self.dataset_dir, os.path.split(self._record_file)[1])
+
+    def __call__(self, *args, **kwargs):
+        """
+        Call means load from disk
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        extension = os.path.splitext(self.record_file)[1].lower()
+        if extension == "":
+            file_candidates = glob.glob(self.record_file + "*.hea")
+            file_candidates += glob.glob(self.record_file + "*.ecg")
+            if len(file_candidates) == 0:
+                raise FileNotFoundError(f"No hea/ecg file found with basename {self.record_file}")
+            if len(file_candidates) > 1:
+                raise ValueError(f"Too many files ({len(file_candidates)}) starts with {self.record_file}")
+            extension = os.path.splitext(file_candidates[0])[1].lower()
+
+        if extension == ".hea":
+            return ECGRecord.from_wfdb(self.record_file, self.selected_leads)
+        elif extension == ".ecg":
+            return ECGRecord.from_ishine(self.record_file, self.selected_leads)
+        else:
+            raise ValueError(f"Unknown extension {extension}")
+
+    def __repr__(self):
+        return os.path.split(self._record_file)[1]
+
+    def __eq__(self, other):
+        if self.record_file == other.record_file and self.selected_leads == other.selected_leads:
+            return True
+        return False
+
+
+class ECGDataset(RelocatableDataset):
+    record_tickets: List[RecordTicket] = []
+    dataset_name = None
+
+    def __init__(self, dataset_name=None, dataset_dir=None, record_tickets: List[RecordTicket] = []):
+        if not os.path.isdir(dataset_dir):
+            raise FileNotFoundError(f"{dataset_dir} is not a directory")
+
+        if dataset_name is not None:
+            self.dataset_name = dataset_name
+        else:
+            self.dataset_name = os.path.split(dataset_dir)[1]
+
+        self._dataset_dir = dataset_dir
+        self.record_tickets = record_tickets
+
+    @property
+    def records(self):
+        return [rt() for rt in self.record_tickets]
+
+    def __iter__(self):
+        return iter(self.records)
+
+    def __getitem__(self, item):
+        if isinstance(item, slice):
+            return [rt() for rt in self.record_tickets[item]]
+        else:
+            return self.record_tickets[item]()
+
+    def shuffle(self):
+        random.shuffle(self.record_tickets)
+
+    def slice(self, item):
+        new_instance = copy.copy(self)
+        new_instance.record_tickets = new_instance.record_tickets[item]
+        return new_instance
+
+    @classmethod
+    def from_dir(cls, dataset_dir, selected_leads=None):
+        if not os.path.isdir(dataset_dir):
+            raise FileNotFoundError(f"{dataset_dir} does not exist")
+
+        hea_files = glob.glob(os.path.join(dataset_dir, "*.hea"))
+        ecg_files = glob.glob(os.path.join(dataset_dir, "*.ecg"))
+        record_tickets = [RecordTicket(f, selected_leads) for f in hea_files + ecg_files]
+        if len(record_tickets) == 0:
+            raise FileNotFoundError(f"{dataset_dir} does not contain any valid ECG record")
+        return cls(dataset_dir=dataset_dir, record_tickets=record_tickets)
+
+    def split_dataset(self, dataset_names=None, *ratios):
+        """
+
+        :param dataset_names: ["train", "dev", "test"]
+        :param ratios: 0.8, 0.1
+        :return:
+        """
+        if sum(ratios) > 1:
+            raise ValueError("Sum of ratios should be less than or equal to 1")
+        if len(dataset_names) != len(ratios) + 1:
+            raise ValueError("len(dataset_names) must == len(ratios) + 1")
+        record_numbers = (len(self) * np.array(ratios)).astype(int).tolist()  # type:list
+        record_numbers.append(len(self) - sum(record_numbers))
+        output_dataset = []
+        starting_index = 0
+        for name, number in zip(dataset_names, record_numbers):
+            ending_index = starting_index + number
+            output_dataset.append(self.slice(slice(starting_index, ending_index)))
+            starting_index = ending_index
+        return tuple(output_dataset)
+
+    def save_csv(self, output_file_name):
+        """
+
+        :param output_file_name: if extension is .csv, create directory and write into the file, if not assume this is directory and write into dataset_name_records.csv
+        :return:
+        """
+        extension = os.path.splitext(output_file_name)[1].lower()
+        if extension != ".csv":
+            output_file_name = os.path.join(output_file_name, self.dataset_name + "_records.csv")
+        try:
+            os.makedirs(os.path.dirname(output_file_name))
+        except OSError:
+            pass
+
+        with open(output_file_name, 'w', newline='') as csvfile:
+            csvwriter = csv.writer(csvfile, dialect="excel")
+            csvwriter.writerow(["Dataset_Directory", "Base_Name"])
+            for r in self.record_tickets:
+                csvwriter.writerow([r.dataset_dir, r.record_base])
+
+    def to_pickle(self, output_file_name):
+        output_csv_name = os.path.splitext(output_file_name)[0] + ".csv"
+        self.save_csv(output_csv_name)
+        if os.path.splitext(output_file_name)[1] != ".pickle":
+            raise ValueError(f"Extension of {output_file_name} must be .pickle")
+
+        with open(output_file_name, 'wb') as f:
+            pickle.dump(self, f, pickle.HIGHEST_PROTOCOL)
+
+    @classmethod
+    def from_pickle(cls, pickle_file):
+        if not os.path.isfile(pickle_file):
+            raise FileNotFoundError(f"{pickle_file} is not found")
+        with open(pickle_file, 'rb') as f:
+            return pickle.load(f)
+
+    def __len__(self):
+        return len(self.record_tickets)
+
+    def __add__(self, other):
+        new_instance = copy.copy(self)
+        new_instance.record_tickets += other.record_tickets
+        return new_instance
+
+    def __repr__(self):
+        record_str = '\n'.join([str(r) for r in self.record_tickets])
+        return f"Dataset with records\n{record_str}"
+
+    def __eq__(self, other):
+        for s, o in zip(self.record_tickets, other.record_tickets):
+            if s != o:
+                return False
+        return True

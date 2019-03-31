@@ -2,7 +2,9 @@
 from pkg_resources import get_distribution, DistributionNotFound
 
 from .annotations import ECGAnnotation
-from .ecg import ECGRecord, Signal, Time, SubjectInfo
+from .ecg import ECGRecord, RecordTicket, ECGDataset
+from .sequence_data import Time, Signal
+from .subject_info import SubjectInfo
 
 try:
     # Change here if project is renamed and does not equal the package name

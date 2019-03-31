@@ -21,3 +21,7 @@ Version 0.0.4
 ===========
 - Add support of annotation files for WFDB/iShine
 
+Version 0.0.5
+===========
+- Add a new class ECGDataset to support full dataset manipulation
+
