@@ -163,6 +163,9 @@ class RecordThawingCallable:
         return x()
 
 
+RECORD_LOAD_THREADS = 2
+
+
 class ECGDataset(RelocatableDataset):
     record_tickets: List[RecordTicket] = []
     dataset_name = None
@@ -172,14 +175,14 @@ class ECGDataset(RelocatableDataset):
     def duration(self):
         if self._df is not None:
             return self._df["duration"].tolist()
-        with Pool(4) as p:
+        with Pool(RECORD_LOAD_THREADS) as p:
             return p.map(RecordGetAttrCallable("duration"), self.record_tickets)
 
     @property
     def sig_len(self):
         if self._df is not None:
             return self._df["sig_len"].tolist()
-        with Pool(4) as p:
+        with Pool(RECORD_LOAD_THREADS) as p:
             return p.map(RecordGetAttrCallable("sig_len"), self.record_tickets)
 
     def __init__(self, dataset_name=None, dataset_dir=None, record_tickets: List[RecordTicket] = []):
@@ -245,7 +248,9 @@ class ECGDataset(RelocatableDataset):
         starting_index = 0
         for name, number in zip(dataset_names, record_numbers):
             ending_index = starting_index + number
-            output_dataset.append(self.slice(slice(starting_index, ending_index)))
+            new_dataset = self.slice(slice(starting_index, ending_index))
+            new_dataset.dataset_name = name
+            output_dataset.append(new_dataset)
             starting_index = ending_index
         return tuple(output_dataset)
 

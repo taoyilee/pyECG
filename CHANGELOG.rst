@@ -51,3 +51,7 @@ Version 0.0.8.3
 ===============
 - Use metadata to speed up dataset processing
 
+Version 0.0.8.4
+===============
+- Bugfix  - dataset split does not change dataset_name, now fixed
+

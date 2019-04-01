@@ -73,6 +73,16 @@ def test_split_ratio_valid(dataset_dir, dataset_name):
 
 @pytest.mark.parametrize("dataset_dir,dataset_name", [("tests/dataset_1", "dataset_1"),
                                                       ("tests/wfdb_dataset_0", "wfdb_dataset_0")])
+def test_split_name(dataset_dir, dataset_name):
+    dataset = ECGDataset.from_dir(dataset_dir=dataset_dir)
+    train_set, dev_set, test_set = dataset.split_dataset(["train", "dev", "test"], 0.8, 0.1)
+    assert train_set.dataset_name == "train"
+    assert dev_set.dataset_name == "dev"
+    assert test_set.dataset_name == "test"
+
+
+@pytest.mark.parametrize("dataset_dir,dataset_name", [("tests/dataset_1", "dataset_1"),
+                                                      ("tests/wfdb_dataset_0", "wfdb_dataset_0")])
 def test_split_name_mismatch(dataset_dir, dataset_name):
     dataset = ECGDataset.from_dir(dataset_dir=dataset_dir)
     with pytest.raises(ValueError):
