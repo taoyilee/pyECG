@@ -47,9 +47,7 @@ Version 0.0.8.2
 - Add record_name property to RecordTicket
 - Return output file name in to_csv() and to_pickle() methods
 
-
-
-Version 0.0.8.2
+Version 0.0.8.3
 ===============
 - Use metadata to speed up dataset processing
 
