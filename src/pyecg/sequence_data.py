@@ -22,6 +22,8 @@ class Sequence:
         return new_instance
 
     def __len__(self):
+        if isinstance(self.seq_data, int) or isinstance(self.seq_data, float):
+            return 1
         return len(self.seq_data)
 
     def __iter__(self):

@@ -132,6 +132,8 @@ def test_save_csv():
 def test_save_csv_autoname():
     dataset = ECGDataset.from_dir(dataset_dir="tests/wfdb_dataset_0")
     dataset.save_csv("tests/output/transient")
+    import time
+    time.sleep(1)
     assert os.path.isfile("tests/output/transient/wfdb_dataset_0_records.csv")
     shutil.rmtree("tests/output/transient")
 

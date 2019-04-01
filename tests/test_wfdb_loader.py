@@ -55,7 +55,7 @@ def test_annotation(hea_path):
 @pytest.mark.parametrize("hea_path", ["tests/wfdb/100"])
 def test_select_annotation(hea_path):
     record = ECGRecord.from_wfdb(hea_path)
-    assert len(record.annotations.select_label("N")) == 2239
+    assert len(record.annotations["N"]) == 2239
 
 
 @pytest.mark.parametrize("hea_path", ["tests/wfdb/100"])

@@ -12,8 +12,17 @@ class ECGRecord:
     time: Time = None
     record_name: str = None
     _signals: List[Signal] = []
-    annotations: ECGAnnotation = None
+    _annotations: ECGAnnotation = None
     info: SubjectInfo = None
+
+    @property
+    def annotations(self):
+        return self._annotations
+
+    @annotations.setter
+    def annotations(self, value):
+        self._annotations = value
+        self._annotations.max_index = len(self)
 
     def __eq__(self, other):
         if self.n_sig != other.n_sig:
@@ -73,6 +82,13 @@ class ECGRecord:
     def __getitem__(self, item):
         new_instance = copy.copy(self)
         new_instance.time = new_instance.time.slice(item)
+        if new_instance.annotations is not None:
+            if isinstance(item, slice):
+                new_instance.annotations = new_instance.annotations.shift(0 if item.start is None else -item.start)
+                new_instance.annotations.max_index = len(new_instance)
+            else:
+                new_instance.annotations = new_instance.annotations.shift(-item)
+                new_instance.annotations.max_index = 1
         new_instance._signals = [s.slice(item) for s in new_instance._signals]
         return new_instance
 
@@ -95,7 +111,6 @@ class ECGRecord:
             raise ValueError(f"Signal should be 2D array e.g. (3, 1000) got {signal_array.shape}")
         if signal_array.shape[0] != len(signal_names):
             raise ValueError(f"signal_array.shape[0] should match len(signal_names)")
-
         for signal, name in zip(signal_array, signal_names):
             new_instance.add_signal(Signal(signal=signal, lead_name=name))
         return new_instance

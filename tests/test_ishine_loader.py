@@ -55,7 +55,7 @@ def test_annotation(ecg_path):
 @pytest.mark.parametrize("ecg_path", ["tests/ishine/ECG_P28.01.ecg"])
 def test_select_annotation(ecg_path):
     record = ECGRecord.from_ishine(ecg_path)
-    assert len(record.annotations.select_label("N")) == 87
+    assert len(record.annotations["N"]) == 87
 
 
 @pytest.mark.parametrize("ecg_path", ["tests/ishine/ECG_P28.01.ecg"])

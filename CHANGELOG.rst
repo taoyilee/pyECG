@@ -55,3 +55,13 @@ Version 0.0.8.4
 ===============
 - Bugfix  - dataset split does not change dataset_name, now fixed
 
+
+Version 0.0.8.5
+===============
+- Bugfix  - record slicing also slices and reindexes annotations
+
+
+Version 0.0.9
+===============
+- Support label stemming and bugfix
+
