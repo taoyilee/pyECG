@@ -1,4 +1,4 @@
-Dataset_Directory,Base_Name
-tests/dataset_1,100.hea
-tests/dataset_1,101.hea
-tests/dataset_1,ECG_P28.01.ecg
+,Dataset_Directory,Base_Name,sig_len,duration
+0,tests/dataset_1,100.hea,650000,1805.5527777777777
+1,tests/dataset_1,101.hea,650000,1805.5527777777777
+2,tests/dataset_1,ECG_P28.01.ecg,95573,95.572
