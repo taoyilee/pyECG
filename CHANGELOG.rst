@@ -65,3 +65,8 @@ Version 0.0.9
 ===============
 - Support label stemming and bugfix
 
+
+Version 0.0.9.1
+===============
+- Lazy load signal and annotations
+

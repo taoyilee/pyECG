@@ -1,8 +1,18 @@
+import abc
 import copy
 
 import numpy as np
 
 from .constants import *
+
+
+class AnnotationLoader:
+    def __init__(self, annotation_file):
+        self.annotation_file = annotation_file
+
+    @abc.abstractmethod
+    def __call__(self, *args, **kwargs):
+        pass
 
 
 class ECGAnnotationSample:

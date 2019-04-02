@@ -2,7 +2,7 @@
 from pkg_resources import get_distribution, DistributionNotFound
 
 from .annotations import ECGAnnotation
-from .ecg import ECGRecord
+from .ecg import ECGRecord,RecordLoader,RecordSignalLoader
 from pyecg.dataset import RecordTicket, ECGDataset
 from .sequence_data import Time, Signal
 from .subject_info import SubjectInfo

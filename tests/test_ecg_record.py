@@ -1,8 +1,7 @@
 import numpy as np
 import pytest
-from scipy.misc import electrocardiogram
 
-from pyecg import ECGRecord, Time, Signal
+from pyecg import ECGRecord, Time
 from pyecg.annotations import ECGAnnotation, ECGAnnotationSample
 
 
@@ -22,18 +21,6 @@ def test_length(fs, samples):
 def test_bad_time(time):
     with pytest.raises(TypeError):
         ECGRecord("record_100", time=time)
-
-
-def test_inconsistent_signal_len():
-    record = ECGRecord("record_100", time=Time.from_fs_samples(360, 10))
-    with pytest.raises(ValueError):
-        record.add_signal(Signal(electrocardiogram(), "MLII"))
-
-
-def test_inconsistent_signal_type():
-    record = ECGRecord("record_100", time=Time.from_fs_samples(360, 10))
-    with pytest.raises(TypeError):
-        record.add_signal(electrocardiogram())
 
 
 @pytest.mark.parametrize("time, signal", [(np.arange(100), np.random.rand(100)),
@@ -87,7 +74,7 @@ def test_slicing(time, signal):
     record_sliced = record[0:1]
     assert record_sliced.time == time[0:1]
     for i, s in enumerate(signal):
-        assert record_sliced._signals[i] == s[0:1]
+        assert record_sliced.signals[i] == s[0:1]
 
 
 @pytest.mark.parametrize("time, signal", [([0, 1, 2, 3, 4, 5], np.array([[1, 2, 3, 4, 5, 6],
@@ -113,7 +100,7 @@ def test_slicing_single_element(time, signal):
     record_sliced = record[0]
     assert record_sliced.time == time[0]
     for i, s in enumerate(signal):
-        assert record_sliced._signals[i] == s[0]
+        assert record_sliced.signals[i] == s[0]
 
 
 @pytest.mark.parametrize("time, signal", [([0, 1, 2, 3, 4, 5], np.array([[1, 2, 3, 4, 5, 6],
